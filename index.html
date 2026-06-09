@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Waste Segregation System</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:#f4f6f8;
+}
+
+header{
+    background:#2c7a7b;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn{
+    background:#2c7a7b;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:5px;
+    cursor:pointer;
+    margin:5px;
+}
+
+.btn:hover{
+    background:#285e61;
+}
+
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    margin-bottom:12px;
+    box-sizing:border-box;
+}
+
+textarea{
+    min-height:120px;
+}
+
+.hidden{
+    display:none;
+}
+
+.image-box{
+    border:2px dashed #999;
+    padding:15px;
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.public-entry{
+    border-bottom:1px solid #ccc;
+    padding:10px 0;
+}
+
+footer{
+    background:#1a202c;
+    color:white;
+    text-align:center;
+    padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>E-Waste Segregation System</h1>
+    <p>College Mini Project</p>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Select Item Condition</h2>
+
+        <button class="btn" onclick="showWorking()">
+            Working
+        </button>
+
+        <button class="btn" onclick="showNonWorking()">
+            Non-Working
+        </button>
+    </div>
+
+    <div id="working" class="card hidden">
+        <h2>Working Items</h2>
+
+        <button class="btn" onclick="showInfo('Working Keyboard')">
+            Keyboard
+        </button>
+
+        <button class="btn" onclick="showInfo('Working Mouse')">
+            Mouse
+        </button>
+
+        <button class="btn" onclick="showInfo('Working Motherboard')">
+            Motherboard
+        </button>
+
+        <button class="btn" onclick="showInfo('Working RAM')">
+            RAM
+        </button>
+    </div>
+
+    <div id="nonworking" class="card hidden">
+        <h2>Non-Working Items</h2>
+
+        <button class="btn" onclick="showInfo('Non-Working Keyboard')">
+            Keyboard
+        </button>
+
+        <button class="btn" onclick="showInfo('Non-Working Mouse')">
+            Mouse
+        </button>
+
+        <button class="btn" onclick="showInfo('Non-Working Motherboard')">
+            Motherboard
+        </button>
+
+        <button class="btn" onclick="showInfo('Non-Working RAM')">
+            RAM
+        </button>
+    </div>
+
+    <div id="info" class="card hidden">
+
+        <h2 id="infoTitle"></h2>
+
+        <label>College Name</label>
+        <input type="text" id="college">
+
+        <label>Location</label>
+        <input type="text" id="location">
+
+        <label>Contact Number</label>
+        <input
+            type="text"
+            id="contact"
+            maxlength="10"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+        >
+
+        <label>Upload Image</label>
+        <div class="image-box">
+            <input type="file" id="image">
+        </div>
+
+        <label>Description</label>
+        <textarea id="content"></textarea>
+
+        <button class="btn" onclick="saveData()">
+            Save
+        </button>
+
+    </div>
+
+    <div class="card">
+        <h2>Public Saved Data</h2>
+        <div id="publicData"></div>
+    </div>
+
+</div>
+
+<footer>
+    Developed by Sandeep | E-Waste Project
+</footer>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDiGclgJNjJiJq7sKKNLwFq2_QVAre3YbA",
+    authDomain: "e-waste--management.firebaseapp.com",
+    projectId: "e-waste--management",
+    storageBucket: "e-waste--management.firebasestorage.app",
+    messagingSenderId: "539541911366",
+    appId: "1:539541911366:web:4f61d9d82b6962545bd747"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.showWorking = function() {
+    document.getElementById("working").classList.remove("hidden");
+    document.getElementById("nonworking").classList.add("hidden");
+};
+
+window.showNonWorking = function() {
+    document.getElementById("nonworking").classList.remove("hidden");
+    document.getElementById("working").classList.add("hidden");
+};
+
+window.showInfo = function(title) {
+    document.getElementById("infoTitle").innerText = title;
+    document.getElementById("info").classList.remove("hidden");
+};
+
+window.saveData = async function() {
+
+    const title =
+        document.getElementById("infoTitle").innerText;
+
+    const college =
+        document.getElementById("college").value;
+
+    const location =
+        document.getElementById("location").value;
+
+    const contact =
+        document.getElementById("contact").value;
+
+    const content =
+        document.getElementById("content").value;
+
+    if(
+        !college ||
+        !location ||
+        !contact ||
+        !content
+    ){
+        alert("Please fill all fields");
+        return;
+    }
+
+    try{
+
+        await addDoc(
+            collection(db,"ewasteData"),
+            {
+                title,
+                college,
+                location,
+                contact,
+                content,
+                createdAt:new Date()
+            }
+        );
+
+        alert("Data Saved Successfully");
+
+        document.getElementById("college").value="";
+        document.getElementById("location").value="";
+        document.getElementById("contact").value="";
+        document.getElementById("content").value="";
+
+        loadData();
+
+    }catch(error){
+        console.error(error);
+        alert("Error saving data");
+    }
+};
+
+async function loadData(){
+
+    const publicData =
+        document.getElementById("publicData");
+
+    publicData.innerHTML="";
+
+    const querySnapshot =
+        await getDocs(
+            collection(db,"ewasteData")
+        );
+
+    querySnapshot.forEach((doc)=>{
+
+        const data = doc.data();
+
+        publicData.innerHTML += `
+            <div class="public-entry">
+                <strong>${data.title}</strong><br>
+                College: ${data.college}<br>
+                Location: ${data.location}<br>
+                Contact: ${data.contact}<br>
+                <pre>${data.content}</pre>
+            </div>
+        `;
+    });
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
