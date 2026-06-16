@@ -7,7 +7,7 @@
 
 <style>
 body{
-    font-family: Arial, sans-serif;
+    font-family:Arial,sans-serif;
     margin:0;
     background:#f4f6f8;
 }
@@ -16,42 +16,60 @@ header{
     background:#2c7a7b;
     color:white;
     text-align:center;
-    padding:20px;
+    padding:18px;
+    position:sticky;
+    top:0;
+    border-radius:0 0 20px 20px;
+    box-shadow:0 3px 12px rgba(0,0,0,.15);
 }
 
 .container{
-    max-width:1000px;
+    max-width:500px;
     margin:auto;
-    padding:20px;
+    padding:15px;
 }
 
 .card{
     background:white;
     padding:20px;
-    margin-bottom:20px;
-    border-radius:10px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom:15px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+    animation:fadeIn .4s ease;
 }
 
 .btn{
+    width:100%;
     background:#2c7a7b;
     color:white;
     border:none;
-    padding:10px 15px;
-    border-radius:5px;
+    padding:14px;
+    border-radius:12px;
+    font-size:16px;
+    font-weight:bold;
+    margin-top:10px;
     cursor:pointer;
-    margin:5px;
+}
+.delete-btn{
+    background:#dc2626;
+}
+
+.delete-btn:hover{
+    background:#b91c1c;
 }
 
 .btn:hover{
     background:#285e61;
 }
 
-input, textarea{
+input,
+textarea{
     width:100%;
-    padding:10px;
+    padding:12px;
     margin-top:8px;
     margin-bottom:12px;
+    border:1px solid #ddd;
+    border-radius:12px;
     box-sizing:border-box;
 }
 
@@ -64,46 +82,85 @@ textarea{
 }
 
 .image-box{
-    border:2px dashed #999;
+    border:2px dashed #bbb;
+    border-radius:12px;
     padding:15px;
     text-align:center;
-    margin-bottom:15px;
-}
-
-.public-entry{
-    border-bottom:1px solid #ccc;
-    padding:10px 0;
 }
 
 footer{
     background:#1a202c;
     color:white;
     text-align:center;
-    padding:10px;
+    padding:12px;
+    margin-top:20px;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 </style>
+
 </head>
 
 <body>
-
 <header>
-    <h1>E-Waste Segregation System</h1>
+<h1>♻️ E-Waste Segregation System</h1>
     <p>College Mini Project</p>
 </header>
 
 <div class="container">
 
-    <div class="card">
-        <h2>Select Item Condition</h2>
+<div class="card" id="loginCard">
+    <h2>User Login / Signup</h2>
 
-        <button class="btn" onclick="showWorking()">
-            Working
-        </button>
+    <input
+        type="email"
+        id="email"
+        placeholder="Enter Email">
 
-        <button class="btn" onclick="showNonWorking()">
-            Non-Working
-        </button>
-    </div>
+    <input
+        type="password"
+        id="password"
+        placeholder="Enter Password">
+
+    <button class="btn" onclick="signup()">
+        Sign Up
+    </button>
+
+    <button class="btn" onclick="login()">
+        Login
+    </button>
+
+    <button class="btn" onclick="logoutUser()">
+        Logout
+ </button>
+
+    <p id="userStatus">
+        Not Logged In
+    </p>
+
+</div>
+<div id="adminPanel" class="card hidden">
+    <h2>🔐 Admin Dashboard</h2>
+
+    <p>Total Records: <span id="totalRecords">0</span></p>
+
+    <button class="btn" onclick="loadAdminData()">
+        Refresh Records
+    </button>
+
+    <div id="adminData"></div>
+</div>
+
+<div id="dashboard" class="hidden">
 
     <div id="working" class="card hidden">
         <h2>Working Items</h2>
@@ -174,75 +231,138 @@ footer{
         <button class="btn" onclick="saveData()">
             Save
         </button>
-
-    </div>
-
-    <div class="card">
-        <h2>Public Saved Data</h2>
-        <div id="publicData"></div>
-    </div>
-
 </div>
+
+
+  <div class="card">
+        <h2>Select Item Condition</h2>
+
+        <button class="btn" onclick="showWorking()">
+            Working
+        </button>
+
+        <button class="btn" onclick="showNonWorking()">
+            Non-Working
+        </button>
+
+    </div>
+
 <div class="card">
-    <h2>Current Drawbacks of the System</h2>
-
-    <ol>
-        <li>Limited e-waste categories are supported.</li>
-
-        <li>No automatic identification of electronic waste items.</li>
-
-        <li>Basic security and authentication features.</li>
-
-        <li>Uploaded images are not automatically analyzed.</li>
-
-        <li>Requires internet connectivity and cloud services.</li>
-    </ol>
+    <h2>Public Saved Data</h2>
+    <div id="publicData"></div>
 </div>
+</div>
+
 <footer>
-    Developed by Sandeep | E-Waste Project
+    ♻️ Eco Experts | Smart E-Waste Management
 </footer>
 
 <script type="module">
 
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
 import {
     getFirestore,
     collection,
     addDoc,
-    getDocs
+    getDocs,
+    deleteDoc,
+    doc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 const firebaseConfig = {
-    apiKey: "AIzaSyDiGclgJNjJiJq7sKKNLwFq2_QVAre3YbA",
-    authDomain: "e-waste--management.firebaseapp.com",
-    projectId: "e-waste--management",
-    storageBucket: "e-waste--management.firebasestorage.app",
-    messagingSenderId: "539541911366",
-    appId: "1:539541911366:web:4f61d9d82b6962545bd747"
+  apiKey: "AIzaSyAFomt6sMIFBeD5q86wRCX8-EGrQ5IdkEY",
+  authDomain: "e-waste-app-72630.firebaseapp.com",
+  projectId: "e-waste-app-72630",
+  storageBucket: "e-waste-app-72630.firebasestorage.app",
+  messagingSenderId: "832630952237",
+  appId: "1:832630952237:web:a93f14129de5630fa983a4",
+  measurementId: "G-VP488BP715"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const ADMIN_EMAIL = "admin@gmail.com";
 
-window.showWorking = function() {
+window.showWorking = function () {
     document.getElementById("working").classList.remove("hidden");
     document.getElementById("nonworking").classList.add("hidden");
 };
 
-window.showNonWorking = function() {
+window.showNonWorking = function () {
     document.getElementById("nonworking").classList.remove("hidden");
     document.getElementById("working").classList.add("hidden");
 };
 
-window.showInfo = function(title) {
+window.showInfo = function(title){
     document.getElementById("infoTitle").innerText = title;
     document.getElementById("info").classList.remove("hidden");
 };
 
-window.saveData = async function() {
+window.signup = async function(){
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try{
+        await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+        alert("Signup Successful");
+
+    }catch(error){
+        alert(error.message);
+    }
+};
+
+window.login = async function(){
+
+    const email =
+        document.getElementById("email").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    try{
+
+        await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+       
+        alert("Login Successful");
+
+    }catch(error){
+        alert(error.message);
+    }
+};
+
+window.logoutUser = async function(){
+    await signOut(auth);
+};
+window.saveData = async function(){
+
+    if(!auth.currentUser){
+        alert("Please Login First");
+        return;
+    }
 
     const title =
         document.getElementById("infoTitle").innerText;
@@ -279,31 +399,63 @@ window.saveData = async function() {
                 location,
                 contact,
                 content,
-                createdAt:new Date()
+                user: auth.currentUser.email,
+                createdAt: new Date()
             }
         );
 
         alert("Data Saved Successfully");
 
-        document.getElementById("college").value="";
-        document.getElementById("location").value="";
-        document.getElementById("contact").value="";
-        document.getElementById("content").value="";
+        document.getElementById("college").value = "";
+        document.getElementById("location").value = "";
+        document.getElementById("contact").value = "";
+        document.getElementById("content").value = "";
 
         loadData();
 
     }catch(error){
+
         console.error(error);
-        alert("Error saving data");
+        alert("Error Saving Data");
     }
 };
+onAuthStateChanged(auth, (user) => {
 
+    const dashboard = document.getElementById("dashboard");
+    const loginCard = document.getElementById("loginCard");
+    const adminPanel = document.getElementById("adminPanel");
+
+    if(user){
+
+        document.getElementById("userStatus").innerHTML =
+        "Logged in as: " + user.email;
+
+        dashboard.classList.remove("hidden");
+        loginCard.classList.add("hidden");
+
+        if(user.email === ADMIN_EMAIL){
+            adminPanel.classList.remove("hidden");
+            loadAdminData();
+        }else{
+            adminPanel.classList.add("hidden");
+        }
+
+    }else{
+
+        document.getElementById("userStatus").innerHTML =
+        "Not Logged In";
+
+        dashboard.classList.add("hidden");
+        loginCard.classList.remove("hidden");
+        adminPanel.classList.add("hidden");
+    }
+});
 async function loadData(){
 
     const publicData =
         document.getElementById("publicData");
 
-    publicData.innerHTML="";
+    publicData.innerHTML = "";
 
     const querySnapshot =
         await getDocs(
@@ -315,20 +467,94 @@ async function loadData(){
         const data = doc.data();
 
         publicData.innerHTML += `
-            <div class="public-entry">
-                <strong>${data.title}</strong><br>
-                College: ${data.college}<br>
-                Location: ${data.location}<br>
-                Contact: ${data.contact}<br>
-                <pre>${data.content}</pre>
-            </div>
+        <div class="public-entry">
+            <strong>${data.title}</strong><br>
+            User: ${data.user}<br>
+            College: ${data.college}<br>
+            Location: ${data.location}<br>
+            Contact: ${data.contact}<br>
+            <pre>${data.content}</pre>
+        </div>
         `;
     });
 }
 
-loadData();
+window.loadAdminData = async function(){
+
+    const adminData =
+        document.getElementById("adminData");
+
+    adminData.innerHTML = "";
+
+    const querySnapshot =
+        await getDocs(
+            collection(db,"ewasteData")
+        );
+
+    let count = 0;
+
+    querySnapshot.forEach((doc)=>{
+
+        count++;
+
+        const data = doc.data();
+
+     adminData.innerHTML += `
+<div class="card">
+    <b>${data.title}</b><br>
+    User: ${data.user}<br>
+    College: ${data.college}<br>
+    Location: ${data.location}<br>
+    Contact: ${data.contact}<br>
+    ${data.content}<br><br>
+
+    <button class="btn delete-btn"
+        onclick="deleteRecord('${doc.id}')">
+        🗑 Delete
+    </button>
+</div>
+`;
+    });
+document.getElementById("totalRecords").innerText = count;
+};
+window.deleteRecord = async function(id){
+
+    if(auth.currentUser.email !== ADMIN_EMAIL){
+        alert("Admin Access Only");
+        return;
+    }
+
+    const confirmDelete =
+        confirm("Are you sure you want to delete this record?");
+
+    if(!confirmDelete){
+        return;
+    }
+
+    try{
+
+        await deleteDoc(
+            doc(db, "ewasteData", id)
+        );
+
+        alert("Record Deleted Successfully");
+
+        loadAdminData();
+        loadData();
+
+    }catch(error){
+
+        console.error(error);
+        alert("Delete Failed");
+    }
+};
+
+window.onload = () => {
+    loadData();
+};
 
 </script>
 
 </body>
 </html>
+
