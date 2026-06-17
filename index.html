@@ -262,14 +262,22 @@ footer{
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs,
-    deleteDoc,
-    doc
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+getStorage,
+ref,
+uploadBytes,
+getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 
 import {
@@ -295,6 +303,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const ADMIN_EMAIL = "admin@gmail.com";
+const storage = getStorage(app);
 
 window.showWorking = function () {
     document.getElementById("working").classList.remove("hidden");
@@ -378,6 +387,29 @@ window.saveData = async function(){
 
     const content =
         document.getElementById("content").value;
+const imageFile =
+    document.getElementById("image").files[0];
+
+let imageUrl = "";
+
+if(imageFile){
+
+    const imageRef = ref(
+        storage,
+        "ewasteImages/" +
+        Date.now() +
+        "_" +
+        imageFile.name
+    );
+
+    await uploadBytes(
+        imageRef,
+        imageFile
+    );
+
+    imageUrl =
+        await getDownloadURL(imageRef);
+}
 
     if(
         !college ||
@@ -391,18 +423,19 @@ window.saveData = async function(){
 
     try{
 
-        await addDoc(
-            collection(db,"ewasteData"),
-            {
-                title,
-                college,
-                location,
-                contact,
-                content,
-                user: auth.currentUser.email,
-                createdAt: new Date()
-            }
-        );
+     await addDoc(
+    collection(db,"ewasteData"),
+    {
+        title,
+        college,
+        location,
+        contact,
+        content,
+        imageUrl,
+        user: auth.currentUser.email,
+        createdAt: new Date()
+    }
+);
 
         alert("Data Saved Successfully");
 
@@ -410,6 +443,7 @@ window.saveData = async function(){
         document.getElementById("location").value = "";
         document.getElementById("contact").value = "";
         document.getElementById("content").value = "";
+        document.getElementById("image").value = "";
 
         loadData();
 
@@ -473,7 +507,23 @@ async function loadData(){
             College: ${data.college}<br>
             Location: ${data.location}<br>
             Contact: ${data.contact}<br>
-            <pre>${data.content}</pre>
+${data.imageUrl ?
+`
+<img
+src="${data.imageUrl}"
+style="
+width:100%;
+max-height:250px;
+object-fit:cover;
+border-radius:10px;
+margin-top:10px;
+">
+`
+: ""
+}
+
+<pre>${data.content}</pre>
+    
         </div>
         `;
     });
@@ -486,7 +536,7 @@ window.loadAdminData = async function(){
 
     adminData.innerHTML = "";
 
-    const querySnapshot =
+ const querySnapshot =
         await getDocs(
             collection(db,"ewasteData")
         );
@@ -506,7 +556,25 @@ window.loadAdminData = async function(){
     College: ${data.college}<br>
     Location: ${data.location}<br>
     Contact: ${data.contact}<br>
-    ${data.content}<br><br>
+ ${data.imageUrl ?
+`
+<img
+src="${data.imageUrl}"
+style="
+width:100%;
+max-height:250px;
+object-fit:cover;
+border-radius:10px;
+margin-top:10px;
+">
+`
+: ""
+}
+
+<br>
+${data.content}
+<br><br>.
+
 
     <button class="btn delete-btn"
         onclick="deleteRecord('${doc.id}')">
