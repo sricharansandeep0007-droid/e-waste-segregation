@@ -272,15 +272,6 @@ doc
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
-getStorage,
-ref,
-uploadBytes,
-getDownloadURL
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-
-import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -303,7 +294,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const ADMIN_EMAIL = "admin@gmail.com";
-const storage = getStorage(app);
 
 window.showWorking = function () {
     document.getElementById("working").classList.remove("hidden");
@@ -335,6 +325,7 @@ window.signup = async function(){
         alert("Signup Successful");
 
     }catch(error){
+    console.error(error);
         alert(error.message);
     }
 };
@@ -359,6 +350,7 @@ window.login = async function(){
         alert("Login Successful");
 
     }catch(error){
+    console.error(error);
         alert(error.message);
     }
 };
@@ -387,30 +379,29 @@ window.saveData = async function(){
 
     const content =
         document.getElementById("content").value;
-const imageFile =
-    document.getElementById("image").files[0];
+const imageFile = document.getElementById("image").files[0];
 
 let imageUrl = "";
 
 if(imageFile){
 
-    const imageRef = ref(
-        storage,
-        "ewasteImages/" +
-        Date.now() +
-        "_" +
-        imageFile.name
+    const formData = new FormData();
+
+    formData.append("file", imageFile);
+    formData.append("upload_preset", "ewaste_upload");
+
+    const response = await fetch(
+        "https://api.cloudinary.com/v1_1/dwvpcqw6y/image/upload",
+        {
+            method: "POST",
+            body: formData
+        }
     );
 
-    await uploadBytes(
-        imageRef,
-        imageFile
-    );
+    const data = await response.json();
 
-    imageUrl =
-        await getDownloadURL(imageRef);
+    imageUrl = data.secure_url;
 }
-
     if(
         !college ||
         !location ||
