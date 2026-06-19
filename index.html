@@ -222,9 +222,21 @@ footer{
 
         <label>Upload Image</label>
         <div class="image-box">
-            <input type="file" id="image">
-        </div>
+    <input type="file" id="image" onchange="previewImage(event)">
+    <br><br>
 
+    <img
+        id="preview"
+        src=""
+        style="
+            display:none;
+            width:100%;
+            max-height:250px;
+            object-fit:cover;
+            border-radius:10px;
+        "
+    >
+</div>
         <label>Description</label>
         <textarea id="content"></textarea>
 
@@ -246,6 +258,20 @@ footer{
         </button>
 
     </div>
+<div class="card">
+
+<h2>Dashboard</h2>
+
+<p>Total Records :
+<b id="statTotal">0</b></p>
+
+<p>Working Items :
+<b id="statWorking">0</b></p>
+
+<p>Non-Working Items :
+<b id="statNonWorking">0</b></p>
+
+</div>
 
 <div class="card">
     <h2>Public Saved Data</h2>
@@ -329,6 +355,29 @@ window.signup = async function(){
         alert(error.message);
     }
 };
+window.previewImage = function(event){
+
+    const file = event.target.files[0];
+
+    if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+
+            const preview = document.getElementById("preview");
+
+            preview.src = e.target.result;
+            preview.style.display = "block";
+
+        }
+
+        reader.readAsDataURL(file);
+
+    }
+
+}
+
 
 window.login = async function(){
 
@@ -489,6 +538,9 @@ async function loadData(){
         document.getElementById("publicData");
 
     publicData.innerHTML = "";
+let total = 0;
+let working = 0;
+let nonWorking = 0;
 
     const querySnapshot =
         await getDocs(
@@ -498,6 +550,15 @@ async function loadData(){
     querySnapshot.forEach((doc)=>{
 
         const data = doc.data();
+total++;
+
+if(data.title.includes("Working")){
+    working++;
+}
+
+if(data.title.includes("Non-Working")){
+    nonWorking++;
+}
 
         publicData.innerHTML += `
         <div class="public-entry">
@@ -526,6 +587,9 @@ margin-top:10px;
         </div>
         `;
     });
+document.getElementById("statTotal").innerText = total;
+document.getElementById("statWorking").innerText = working;
+document.getElementById("statNonWorking").innerText = nonWorking;
 }
 
 window.loadAdminData = async function(){
@@ -615,6 +679,7 @@ window.deleteRecord = async function(id){
         alert("Delete Failed");
     }
 };
+
 
 window.onload = () => {
     loadData();
